@@ -32,6 +32,7 @@ rescue LoadError
 end
 
 have_func("rb_errinfo")
+have_func("rb_thread_call_with_gvl")
 
 ["glib2", "atk", "pango", "gdk_pixbuf2"].each do |package|
   directory = "#{package}#{version_suffix}"

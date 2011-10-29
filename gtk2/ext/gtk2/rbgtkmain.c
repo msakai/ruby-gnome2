@@ -183,10 +183,28 @@ gtk_init()
 gtk_exit()
 */
 
+extern int ruby_thread_has_gvl_p(void);
+
+#ifdef HAVE_RB_THREAD_CALL_WITH_GVL
+static VALUE
+gtk_m_main_without_gvl(G_GNUC_UNUSED void *arg) {
+    gtk_main();
+    return Qnil;
+}
+#endif
+
 static VALUE
 gtk_m_main(G_GNUC_UNUSED VALUE self)
 {
+/* Note:
+ * - rb_thread_call_with_gvl is necessary for callback funcsions to re-aquire GVL.
+ * - HAVE_RB_THREAD_CALL_WITH_GVL impleis the existence of rb_thread_blocking_region.
+ */
+#ifdef HAVE_RB_THREAD_CALL_WITH_GVL
+    rb_thread_blocking_region(gtk_m_main_without_gvl, NULL, RUBY_UBF_IO, NULL);
+#else
     gtk_main();
+#endif
     return Qnil;
 }
 

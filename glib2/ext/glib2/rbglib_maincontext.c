@@ -56,6 +56,10 @@ static GPollFunc default_poll_func;
 #  define RUBY_UBF_IO RB_UBF_DFL
 #endif
 
+#ifdef HAVE_RUBY_THREAD_HAS_GVL_P
+extern int ruby_thread_has_gvl_p(void);
+#endif
+
 typedef struct _PollInfo
 {
     GPollFD *ufds;
@@ -78,6 +82,11 @@ static gint
 rg_poll(GPollFD *ufds, guint nfsd, gint timeout)
 {
     PollInfo info;
+
+#ifdef HAVE_RUBY_THREAD_HAS_GVL_P
+    if (!ruby_thread_has_gvl_p())
+        return default_poll_func(ufds, nfsd, timeout);
+#endif
 
     info.ufds = ufds;
     info.nfsd = nfsd;

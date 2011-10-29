@@ -55,10 +55,31 @@ rg_initialize(int argc, VALUE *argv, VALUE self)
     return Qnil;
 }
 
+/* just for ruby-1.9.0. */
+#if !defined(RUBY_UBF_IO) && defined(RB_UBF_DFL)
+#  define RUBY_UBF_IO RB_UBF_DFL
+#endif
+
+#ifdef HAVE_RB_THREAD_CALL_WITH_GVL
+static VALUE
+rg_run_without_gvl(void *arg) {
+    g_main_loop_run((GMainLoop*)arg);
+    return Qnil;
+}
+#endif
+
 static VALUE
 rg_run(VALUE self)
 {
+/* Note:
+ * - rb_thread_call_with_gvl is necessary for callback funcsions to re-aquire GVL.
+ * - HAVE_RB_THREAD_CALL_WITH_GVL impleis the existence of rb_thread_blocking_region.
+ */
+#ifdef HAVE_RB_THREAD_CALL_WITH_GVL
+    rb_thread_blocking_region(rg_run_without_gvl, _SELF(self), RUBY_UBF_IO, NULL);    
+#else
     g_main_loop_run(_SELF(self));
+#endif
     return self;
 }
 
